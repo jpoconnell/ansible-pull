@@ -1,2 +1,3 @@
 # ansible-pull
-starter for sensible
+starter repository for ansible-pull playbooks
+
