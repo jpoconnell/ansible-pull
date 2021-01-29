@@ -5,4 +5,4 @@
     - mc
     - tmux    
     - mysql-server
- 
+    - python3 
