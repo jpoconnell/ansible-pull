@@ -1,0 +1,69 @@
+#########################################################################
+# Title:         Cloudbox: Netdata Role                                 #
+# Author(s):     l3uddz                                                 #
+# URL:           https://github.com/cloudbox/cloudbox                   #
+# Docker Image:  titpetric/netdata                                      #
+# --                                                                    #
+#         Part of the Cloudbox project: https://cloudbox.works          #
+#########################################################################
+#                   GNU General Public License v3.0                     #
+#########################################################################
+---
+- name: "Set DNS Record on CloudFlare"
+  include_role:
+    name: cloudflare-dns
+  vars:
+    subdomain: netdata
+  when: cloudflare_enabled
+
+- name: Get Docker group id.
+  shell: "cut -d: -f3 < <(getent group docker)"
+  args:
+    executable: /bin/bash
+  register: docker_group_id
+
+- name: Create htpasswd
+  htpasswd:
+    path: "/opt/nginx-proxy/htpasswd/{{ item }}.{{ user.domain }}"
+    name: "{{ user.name }}"
+    password: "{{ user.pass }}"
+    owner: "{{ user.name }}"
+    group: "{{ user.name }}"
+    mode: 0664
+  with_items:
+    - netdata
+
+- name: Stop and remove any existing container
+  docker_container:
+    name: netdata
+    state: absent
+
+- name: Create and start container
+  docker_container:
+    name: netdata
+    image: "netdata/netdata:latest"
+    pull: yes
+    capabilities:
+      - SYS_PTRACE
+    env:
+      VIRTUAL_HOST: "netdata.{{ user.domain }}"
+      VIRTUAL_PORT: 19999
+      LETSENCRYPT_HOST: "netdata.{{ user.domain }}"
+      LETSENCRYPT_EMAIL: "{{ user.email }}"
+      PGID: "{{ docker_group_id.stdout }}"
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/proc:/host/proc:ro"
+      - "/sys:/host/sys:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      "com.github.cloudbox.cloudbox_managed": "true"
+    networks:
+      - name: cloudbox
+        aliases:
+          - netdata
+    purge_networks: yes
+    restart_policy: unless-stopped
+    security_opts:
+      - apparmor=unconfined
+    state: started

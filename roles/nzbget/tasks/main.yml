@@ -1,0 +1,97 @@
+#########################################################################
+# Title:         Cloudbox: NZBGet Role                                  #
+# Author(s):     l3uddz, desimaniac                                     #
+# URL:           https://github.com/cloudbox/cloudbox                   #
+# Docker Image:  hotio/nzbget                                           #
+# --                                                                    #
+#         Part of the Cloudbox project: https://cloudbox.works          #
+#########################################################################
+#                   GNU General Public License v3.0                     #
+#########################################################################
+---
+- name: "Set DNS Record on CloudFlare"
+  include_role:
+    name: cloudflare-dns
+  vars:
+    subdomain: nzbget
+  when: cloudflare_enabled
+
+- name: Stop and remove any existing container
+  docker_container:
+    name: nzbget
+    state: absent
+
+- name: Suitarr Migration Tasks
+  import_tasks: "subtasks/suitarr_migration.yml"
+
+- name: Create nzbget directories
+  file: "path={{ item }} state=directory mode=0775 owner={{ user.name }} group={{ user.name }} recurse=yes"
+  with_items:
+    - /opt/nzbget
+    - "{{ downloads.nzbs }}"
+    - "{{ downloads.nzbs }}/nzbget"
+
+- name: Darkerr Tasks
+  import_tasks: "subtasks/darkerr.yml"
+
+- name: Check nzbget.conf exists
+  stat:
+    path: "/opt/nzbget/app/nzbget.conf"
+  register: nzbget_conf
+
+- name: Settings | Set ShellOverride
+  lineinfile:
+    path: "/opt/nzbget/app/nzbget.conf"
+    regexp: '^ShellOverride\s?=.*'
+    line: 'ShellOverride=.py=/usr/bin/python3'
+    state: present
+  when: nzbget_conf.stat.exists
+
+- name: Set default_volumes variable
+  set_fact:
+    default_volumes:
+      - "/opt/nzbget:/config"
+      - "/opt/scripts:/scripts"
+      - "/mnt:/mnt"
+
+- name: Create and start container
+  docker_container:
+    name: nzbget
+    image: hotio/nzbget
+    pull: yes
+    published_ports:
+      - "127.0.0.1:6789:6789"
+    env:
+      BACKUP: "no"
+      PUID: "{{ uid }}"
+      PGID: "{{ gid }}"
+      UMASK: 002
+      VIRTUAL_HOST: "nzbget.{{ user.domain }}"
+      VIRTUAL_PORT: 6789
+      LETSENCRYPT_HOST: "nzbget.{{ user.domain }}"
+      LETSENCRYPT_EMAIL: "{{ user.email }}"
+      LC_ALL: "C"
+      TZ: "{{ tz }}"
+    volumes: "{{ default_volumes + nzbs_downloads_path|default([]) }}"
+    labels:
+      "com.github.cloudbox.cloudbox_managed": "true"
+    networks:
+      - name: cloudbox
+        aliases:
+          - nzbget
+    purge_networks: yes
+    restart_policy: unless-stopped
+    state: started
+
+- name: Scripts Task
+  import_tasks: "subtasks/scripts.yml"
+  when: not continuous_integration
+  tags: nzbget-scripts
+
+- name: Settings Task
+  include_tasks: "subtasks/settings.yml"
+  when: not (
+        (nzbget_conf.stat.exists)
+        or
+        (continuous_integration)
+    )

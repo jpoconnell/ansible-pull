@@ -1,0 +1,17 @@
+#########################################################################
+# Title:         Cloudbox: Notify | Pushover                            #
+# Author(s):     desimaniac                                             #
+# URL:           https://github.com/cloudbox/cloudbox                   #
+# --                                                                    #
+#         Part of the Cloudbox project: https://cloudbox.works          #
+#########################################################################
+#                   GNU General Public License v3.0                     #
+#########################################################################
+---
+- name: Pushover | Send Notification
+  pushover:
+    msg: "{{ message }}"
+    app_token: "{{ pushover.app_token }}"
+    user_key: "{{ pushover.user_key }}"
+    pri: "{{ pushover.priority | default(0,true) }}"
+  ignore_errors: yes

@@ -1,0 +1,59 @@
+#########################################################################
+# Title:         Cloudbox: Jackett Role                                 #
+# Author(s):     l3uddz, desimaniac                                     #
+# URL:           https://github.com/cloudbox/cloudbox                   #
+# Docker Image:  hotio/jackett                                          #
+# --                                                                    #
+#         Part of the Cloudbox project: https://cloudbox.works          #
+#########################################################################
+#                   GNU General Public License v3.0                     #
+#########################################################################
+---
+- name: "Set DNS Record on CloudFlare"
+  include_role:
+    name: cloudflare-dns
+  vars:
+    subdomain: jackett
+  when: cloudflare_enabled
+
+- name: Stop and remove any existing container
+  docker_container:
+    name: jackett
+    state: absent
+
+- name: Suitarr Migration Tasks
+  import_tasks: "subtasks/suitarr_migration.yml"
+
+- name: Create jackett directories
+  file: "path={{ item }} state=directory mode=0775 owner={{ user.name }} group={{ user.name }}"
+  with_items:
+    - /opt/jackett
+
+- name: Create and start container
+  docker_container:
+    name: jackett
+    image: hotio/jackett
+    pull: yes
+    published_ports:
+      - "127.0.0.1:9117:9117"
+    env:
+      BACKUP: "no"
+      PUID: "{{ uid }}"
+      PGID: "{{ gid }}"
+      UMASK: 002
+      VIRTUAL_HOST: "jackett.{{ user.domain }}"
+      VIRTUAL_PORT: 9117
+      LETSENCRYPT_HOST: "jackett.{{ user.domain }}"
+      LETSENCRYPT_EMAIL: "{{ user.email }}"
+      TZ: "{{ tz }}"
+    volumes:
+      - "/opt/jackett:/config"
+    labels:
+      "com.github.cloudbox.cloudbox_managed": "true"
+    networks:
+      - name: cloudbox
+        aliases:
+          - jackett
+    purge_networks: yes
+    restart_policy: unless-stopped
+    state: started

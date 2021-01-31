@@ -1,0 +1,10 @@
+# ... Default sshd_config here. Snipped for brevity ...
+
+# ---------------------------------------------
+# ONLY MATCH BLOCKS CAN GO BELOW THIS SECTION
+# ---------------------------------------------
+
+# Disable password based auth for root through ssh.
+# It is expected that the public key has been configured before this config is installed.
+Match all
+PasswordAuthentication no

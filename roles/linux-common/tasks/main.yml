@@ -1,0 +1,55 @@
+---
+ # Nice to have debugging tools
+- name: install htop
+  apt: pkg=htop state=present
+
+- name: install sysstat which contains iostat
+  apt: pkg=sysstat state=present
+
+- name: install ufw 
+  apt: pkg=ufw state=present
+
+- name: allow ssh through firewall 
+  ufw: name=openssh rule=allow
+  
+- name: enable ufw and set "deny by default" policy 
+  ufw: state=enabled direction=incoming policy=deny
+  
+ # SACK mitigation (CVE-2019-11477)
+ # The before riule are iptable rules that are applied before UFW runs its own rules
+ # Read more: https://github.com/NetFkix/security-bulletins/blob/master/advisories
+ # Somewhat cribbed from http://www.myrkraverk.com/blog/2019/0six/migrating-linux-t
+ 
+
+# Ensure NTP service is installed and running
+- name: install NTP
+  apt: pkg=ntp state=present
+
+- name: NTP service should be online and started
+  service: name=ntp enabled=yes state=started
+
+  # Install and configure firewall
+ # Send an email notification every time someone logs in with SSH
+ # ensure cert based auth only - no passwords allawed
+ # Ensure NTP is enabled and sysncing time
+ # Esure CPU doesn't thottlr for performance /enerygy reason
+ # Mitigate SACK (with low effeortm )
+ 
+- name: copy login-notify.sh
+  copy:
+    src: login-notify.sh
+    dest: /etc/ssh/login-notify.sh
+    mode: a+x
+
+- name: add login-notify.sh to sshd
+  blockinfile:
+    dest: /etc/pam.d/sshd
+    backup: yes
+    insertafter: EOF
+    block: |
+      # Send an email when a user logs in via ssh
+      session optional pam_exec.so seteuid /etc/ssh/login-notify.sh
+      
+      
+      - name install htop
+      install 
