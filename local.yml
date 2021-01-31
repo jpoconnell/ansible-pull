@@ -12,3 +12,24 @@
   - include: tasks/packages.yml
   - include: tasks/users.yml 
   - include: tasks/cron.yml
+
+  - name: copy .bashrc file
+    copy:
+     src: files/bashrc
+     dest: /home/jerryocl/.bashrc
+     owner: jerryocl
+     group: jerryocl
+
+  - name: add ansible user
+    user:
+      name: ansible
+      system: yes
+
+
+  - name: set up sudo for ansible user
+    copy:
+      src: files/sudoer_ansible
+      dest: /etc/sudoers.d/ansible
+      owner: root
+      group: root
+      mode: 0440
