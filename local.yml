@@ -2,12 +2,6 @@
   connection: local
   become: true
 
-  pre_tasks:
-    - name: update repositories
-      apt:
-        update_cache: yes
-      changed_when: False
-
   tasks: 
   - include: tasks/packages.yml
   - include: tasks/users.yml 
@@ -20,16 +14,3 @@
      owner: jerryocl
      group: jerryocl
 
-  - name: add power user
-    user:
-      name: velociraptor
-      system: yes
-
-
-  - name: set up sudo for ansible user
-    copy:
-      src: files/sudoers_velociraptor
-      dest: /etc/sudoers.d/velociraptor
-      owner: root
-      group: root
-      mode: 0440
