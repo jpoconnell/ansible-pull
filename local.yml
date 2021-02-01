@@ -15,4 +15,4 @@
 
   roles:
     - { role: mysql, tags: ['mysql'] }
-
+    - { role: dotnet, tags: ['dotnet'] }
