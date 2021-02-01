@@ -20,9 +20,9 @@
      owner: jerryocl
      group: jerryocl
 
-  - name: add ansible user
+  - name: add power user
     user:
-      name: ansible
+      name: velociraptor
       system: yes
 
 
