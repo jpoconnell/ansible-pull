@@ -13,6 +13,7 @@
      owner: jerryocl
      group: jerryocl
 
+  
   roles:
-    - { role: mysql, tags: ['mysql'] }
-    - { role: dotnet, tags: ['dotnet'] }
+    - ocha.dotnet-core
+
