@@ -5,7 +5,6 @@
   tasks: 
   - include: tasks/packages.yml
   - include: tasks/users.yml 
-  - include: tasks/cron.yml
 
   - name: copy .bashrc file
     copy:
@@ -13,4 +12,7 @@
      dest: /home/jerryocl/.bashrc
      owner: jerryocl
      group: jerryocl
+
+  roles:
+    - { role: mysql, tags: ['mysql'] }
 
