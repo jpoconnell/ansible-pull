@@ -1,6 +1,15 @@
-- name: Install packages
+  - name: autoremove orphan packages (debian and ubuntu)
+    tags: always
     apt:
-      name:
+      autoremove: yes
+      purge: yes
+    when: ansible_distribution in ["Debian", "Pop!_OS", "Ubuntu"]
+
+
+  - name: autoremove orphan packages (debian and ubuntu)
+    tags: always
+    apt:
+      name: yes
         - htop
         - mc
         - tmux
